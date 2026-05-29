@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { exportJSON, importJSON } from './storage.js';
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
@@ -56,6 +57,58 @@ const NAV = [
   )},
 ];
 
+function SidebarBackup() {
+  const fileRef = useRef(null);
+  const [msg, setMsg] = useState('');
+
+  async function handleImport(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    try {
+      await importJSON(file);
+      setMsg('Imported!');
+      setTimeout(() => { setMsg(''); window.location.reload(); }, 800);
+    } catch (err) {
+      setMsg('Error: ' + err.message);
+      setTimeout(() => setMsg(''), 3000);
+    }
+  }
+
+  return (
+    <div className="px-4 py-4 border-t border-white/10 flex flex-col gap-2">
+      {msg && (
+        <p className="font-mono text-center rounded px-2 py-1 text-white/80"
+          style={{ fontSize: 10, background: msg.startsWith('Error') ? '#7f1d1d' : '#14532d' }}>
+          {msg}
+        </p>
+      )}
+      <button onClick={exportJSON}
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+        style={{ fontSize: 11, fontFamily: 'monospace' }}>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2v9M5 8l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        Export JSON
+      </button>
+      <button onClick={() => fileRef.current?.click()}
+        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+        style={{ fontSize: 11, fontFamily: 'monospace' }}>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <path d="M8 11V2M5 5l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 13h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        Import JSON
+      </button>
+      <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+      <span className="font-mono text-gray-600 uppercase tracking-widest text-center" style={{ fontSize: 9 }}>
+        localStorage · no server
+      </span>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <HashRouter>
@@ -90,11 +143,7 @@ export default function App() {
             ))}
           </nav>
 
-          <div className="px-5 py-4 border-t border-white/10">
-            <span className="font-mono text-gray-600 uppercase tracking-widest" style={{ fontSize: 9 }}>
-              localStorage · no server
-            </span>
-          </div>
+          <SidebarBackup />
         </aside>
 
         <main className="flex-1 overflow-y-auto app-grid-bg">
