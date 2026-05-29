@@ -2,35 +2,39 @@ import React, { useState } from 'react';
 
 // Rendered at 4× scale: 200×60px for 50×15mm
 const S = 4;
-const W = 50 * S, H = 15 * S, LW = 20 * S;
+const W = 50 * S, H = 15 * S;
+// Drawing panel: 3:5 aspect ratio (portrait). Inner image height = H - 8px padding → imgH.
+// imgW = imgH * 3/5, panelW = imgW + 8px padding.
+const IMG_H = H - 8;
+const IMG_W = Math.round(IMG_H * 3 / 5);
+const LW = IMG_W + 8;
 
 function SingleTag({ tag }) {
   const [err, setErr] = useState(false);
-  const { metric, lengthMm, standardCode, toolType, quantity, drawingDataUrl } = tag;
+  const { metric, lengthMm, standardCode, toolType, drawingDataUrl } = tag;
 
   return (
     <div style={{ width: W, height: H, border: '1px solid #ccc', display: 'flex',
       fontFamily: 'Roboto Mono, monospace', overflow: 'hidden', position: 'relative', background: '#fff' }}>
-      {/* Left panel */}
+      {/* Left panel — 3:5 drawing */}
       <div style={{ width: LW, height: '100%', background: '#f0f0f0', flexShrink: 0,
-        borderRight: '.5px solid #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
+        borderRight: '.5px solid #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {drawingDataUrl && !err
-          ? <img src={drawingDataUrl} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} onError={() => setErr(true)} />
+          ? <img src={drawingDataUrl} alt=""
+              style={{ width: IMG_W, height: IMG_H, objectFit: 'contain' }}
+              onError={() => setErr(true)} />
           : <span style={{ fontFamily: 'monospace', fontSize: 7, color: '#999', textAlign: 'center' }}>{standardCode || '—'}</span>
         }
       </div>
       {/* Right panel */}
-      <div style={{ flex: 1, padding: '4px 5px', display: 'flex', flexDirection: 'column',
-        justifyContent: 'space-between', overflow: 'hidden', position: 'relative' }}>
-        <div>
-          <div style={{ fontWeight: 'bold', fontSize: 11, color: '#1a1a1a', lineHeight: 1 }}>
-            {metric}
-            {lengthMm != null && <span style={{ fontWeight: 'normal', fontSize: 9, color: '#555', marginLeft: 3 }}>× {lengthMm}mm</span>}
-          </div>
-          {standardCode && <div style={{ fontSize: 8, color: '#555', marginTop: 2 }}>{standardCode}</div>}
-        </div>
-        <div style={{ fontSize: 7, color: '#999' }}>{toolType} · qty {quantity ?? '—'}</div>
-        <div style={{ position: 'absolute', bottom: 3, right: 4, fontSize: 5, color: '#ddd' }}>FastenerTracker</div>
+      <div style={{ flex: 1, padding: '3px 5px', display: 'flex', flexDirection: 'column',
+        justifyContent: 'space-around', overflow: 'hidden' }}>
+        <div style={{ fontWeight: 'bold', fontSize: 11, color: '#1a1a1a', lineHeight: 1 }}>{metric}</div>
+        {lengthMm != null && (
+          <div style={{ fontSize: 9, color: '#555' }}>× {lengthMm} mm</div>
+        )}
+        {standardCode && <div style={{ fontSize: 8, color: '#444' }}>{standardCode}</div>}
+        {toolType && <div style={{ fontSize: 7, color: '#888' }}>{toolType}</div>}
       </div>
       {/* Cut tick marks */}
       <svg width={W} height={H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -42,33 +46,36 @@ function SingleTag({ tag }) {
 }
 
 function BoxTag({ tag }) {
-  const { boxName, divisions = 1, slots = [] } = tag;
-  const HEADER = 16;
+  const { divisions = 1, slots = [] } = tag;
   const colW = W / divisions;
 
   return (
-    <div style={{ width: W, height: H, border: '1px solid #ccc', fontFamily: 'Roboto Mono, monospace', overflow: 'hidden' }}>
-      <div style={{ background: '#1a1a1a', height: HEADER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ color: '#fff', fontSize: 7, fontWeight: 'bold' }}>{boxName}</span>
-      </div>
-      <div style={{ display: 'flex', height: H - HEADER }}>
-        {Array.from({ length: divisions }, (_, i) => {
-          const slot = slots[i] || {};
-          return (
-            <div key={i} style={{ width: colW, height: '100%', background: i % 2 === 0 ? '#f8f8f8' : '#fff',
-              borderLeft: i > 0 ? '.5px solid #e5e5e5' : 'none',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 2, overflow: 'hidden' }}>
-              {slot.metric ? (
-                <>
-                  <span style={{ fontWeight: 'bold', fontSize: 8, color: '#1a1a1a', lineHeight: 1 }}>{slot.metric}</span>
-                  {slot.lengthMm != null && <span style={{ fontSize: 6, color: '#666' }}>×{slot.lengthMm}</span>}
-                  {slot.standardCode && <span style={{ fontSize: 5.5, color: '#aaa' }}>{slot.standardCode}</span>}
-                </>
-              ) : <span style={{ fontSize: 6, color: '#ccc' }}>—</span>}
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ width: W, height: H, border: '1px solid #ccc', fontFamily: 'Roboto Mono, monospace', overflow: 'hidden', display: 'flex' }}>
+      {Array.from({ length: divisions }, (_, i) => {
+        const slot = slots[i] || {};
+        const [imgErr, setImgErr] = useState(false);
+        const slotImgH = H - 6;
+        const slotImgW = Math.round(slotImgH * 3 / 5);
+        return (
+          <div key={i} style={{ width: colW, height: '100%', background: i % 2 === 0 ? '#f8f8f8' : '#fff',
+            borderLeft: i > 0 ? '.5px solid #e5e5e5' : 'none',
+            display: 'flex', alignItems: 'center', overflow: 'hidden', padding: '2px 3px', gap: 2 }}>
+            {slot.drawingDataUrl && !imgErr && (
+              <img src={slot.drawingDataUrl} alt=""
+                style={{ width: slotImgW, height: slotImgH, objectFit: 'contain', flexShrink: 0 }}
+                onError={() => setImgErr(true)} />
+            )}
+            {slot.metric ? (
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', overflow: 'hidden', flex: 1 }}>
+                <span style={{ fontWeight: 'bold', fontSize: 8, color: '#1a1a1a', lineHeight: 1 }}>{slot.metric}</span>
+                {slot.lengthMm != null && <span style={{ fontSize: 6, color: '#555' }}>×{slot.lengthMm}mm</span>}
+                {slot.standardCode && <span style={{ fontSize: 5.5, color: '#888' }}>{slot.standardCode}</span>}
+                {slot.toolType && <span style={{ fontSize: 5.5, color: '#aaa' }}>{slot.toolType}</span>}
+              </div>
+            ) : <span style={{ fontSize: 6, color: '#ccc' }}>—</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }

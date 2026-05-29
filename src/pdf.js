@@ -13,19 +13,25 @@ const COLS         = Math.floor((PAGE_W - 2 * MARGIN + GAP) / (TAG_W + GAP)); //
 const ROWS_PER_PAGE = Math.floor((PAGE_H - 2 * MARGIN + GAP) / (TAG_H + GAP)); // 13
 const PER_PAGE     = COLS * ROWS_PER_PAGE;
 
+// Drawing panel uses 3:5 portrait aspect ratio.
+// Inner drawing height = TAG_H - 2mm padding; width = height * 3/5.
+const DRAW_PAD = 1.5;
+const DRAW_H = TAG_H - 2 * DRAW_PAD;
+const DRAW_W = DRAW_H * 3 / 5;
+const LEFT_W = DRAW_W + 2 * DRAW_PAD;
+
 // ── Single fastener tag (50×15mm) ─────────────────────────────────────────
 function drawSingleTag(doc, x, y, tag) {
-  const LEFT_W = 20;
-  const { metric, lengthMm, standardCode, toolType, quantity, drawingDataUrl } = tag;
+  const { metric, lengthMm, standardCode, toolType, drawingDataUrl } = tag;
 
-  // Left panel
+  // Left panel background
   doc.setFillColor(240, 240, 240);
   doc.rect(x, y, LEFT_W, TAG_H, 'F');
 
-  // Drawing thumbnail
+  // Drawing thumbnail — 3:5 portrait
   if (drawingDataUrl) {
     try {
-      doc.addImage(drawingDataUrl, 'JPEG', x + 1.5, y + 1.5, LEFT_W - 3, TAG_H - 3, '', 'FAST');
+      doc.addImage(drawingDataUrl, 'JPEG', x + DRAW_PAD, y + DRAW_PAD, DRAW_W, DRAW_H, '', 'FAST');
     } catch (_) {
       doc.setFontSize(5); doc.setTextColor(150, 150, 150);
       doc.text(standardCode || '', x + LEFT_W / 2, y + TAG_H / 2 + 1, { align: 'center' });
@@ -39,30 +45,28 @@ function drawSingleTag(doc, x, y, tag) {
   doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.15);
   doc.line(x + LEFT_W, y, x + LEFT_W, y + TAG_H);
 
-  // Right panel text
+  // Right panel text — evenly spaced rows
   const rx = x + LEFT_W + 2;
-
-  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 26, 26);
-  doc.text(metric || '', rx, y + 5.5);
-
-  if (lengthMm != null) {
-    const mw = doc.getTextWidth(metric || '');
-    doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(85, 85, 85);
-    doc.text(`× ${lengthMm}mm`, rx + mw + 0.8, y + 5.5);
-  }
-
-  if (standardCode) {
-    doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(102, 102, 102);
-    doc.text(standardCode, rx, y + 8.5);
-  }
-
-  doc.setFontSize(6); doc.setTextColor(153, 153, 153);
-  doc.text(`${toolType || ''} · qty ${quantity ?? '—'}`, rx, y + 11.5);
-
-  // Watermark
-  doc.setFontSize(4.5); doc.setTextColor(215, 215, 215);
-  const wm = 'FastenerTracker';
-  doc.text(wm, x + TAG_W - doc.getTextWidth(wm) - 1, y + TAG_H - 1.5);
+  const rows = [
+    { val: metric,                          size: 9,   bold: true,  color: [26, 26, 26] },
+    lengthMm != null
+      ? { val: `× ${lengthMm} mm`,          size: 7.5, bold: false, color: [85, 85, 85] }
+      : null,
+    standardCode
+      ? { val: standardCode,                size: 6.5, bold: false, color: [102, 102, 102] }
+      : null,
+    toolType
+      ? { val: toolType,                    size: 6,   bold: false, color: [153, 153, 153] }
+      : null,
+  ].filter(Boolean);
+  const rowH = TAG_H / (rows.length + 1);
+  rows.forEach(({ val, size, bold, color }, idx) => {
+    const ry = y + rowH * (idx + 1);
+    doc.setFontSize(size);
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setTextColor(...color);
+    doc.text(val, rx, ry);
+  });
 
   // Border
   doc.setDrawColor(180, 180, 180); doc.setLineWidth(0.15);
@@ -79,54 +83,46 @@ function drawSingleTag(doc, x, y, tag) {
   });
 }
 
-// ── Box tag (50×15mm) ─────────────────────────────────────────────────────
+// ── Box tag (50×15mm) — no box name, slots fill full height ──────────────
 function drawBoxTag(doc, x, y, tag) {
-  const HEADER_H = 4;
-  const BODY_H = TAG_H - HEADER_H;
-  const { boxName, divisions = 1, slots = [] } = tag;
+  const { divisions = 1, slots = [] } = tag;
   const colW = TAG_W / divisions;
-
-  // Header
-  doc.setFillColor(26, 26, 26);
-  doc.rect(x, y, TAG_W, HEADER_H, 'F');
-  doc.setFontSize(6); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-  doc.text((boxName || '').slice(0, 30), x + TAG_W / 2, y + 2.8, { align: 'center' });
+  // Per-slot drawing: 3:5 portrait, fitting within column height
+  const slotImgH = TAG_H - 2;
+  const slotImgW = slotImgH * 3 / 5;
 
   for (let i = 0; i < divisions; i++) {
     const cx = x + i * colW;
     const slot = slots[i] || {};
     const even = i % 2 === 0;
     doc.setFillColor(even ? 248 : 255, even ? 248 : 255, even ? 248 : 255);
-    doc.rect(cx, y + HEADER_H, colW, BODY_H, 'F');
+    doc.rect(cx, y, colW, TAG_H, 'F');
 
     if (i > 0) {
       doc.setDrawColor(229, 229, 229); doc.setLineWidth(0.1);
-      doc.line(cx, y + HEADER_H + 0.5, cx, y + TAG_H - 0.5);
+      doc.line(cx, y + 0.5, cx, y + TAG_H - 0.5);
     }
 
-    const thumbW = Math.min(colW * 0.38, 8);
+    const imgPanelW = slotImgW + 1;
     if (slot.drawingDataUrl) {
       try {
-        doc.addImage(slot.drawingDataUrl, 'JPEG', cx + 0.5, y + HEADER_H + 0.5,
-          thumbW, BODY_H - 1, '', 'FAST');
+        doc.addImage(slot.drawingDataUrl, 'JPEG', cx + 0.5, y + 1, slotImgW, slotImgH, '', 'FAST');
       } catch (_) {}
     }
 
-    const tx = cx + thumbW + 1;
+    const tx = cx + imgPanelW + 1;
     if (slot.metric) {
-      doc.setFontSize(6); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 26, 26);
-      doc.text(slot.metric, tx, y + HEADER_H + 3.5);
-      if (slot.lengthMm != null) {
-        doc.setFontSize(5); doc.setFont('helvetica', 'normal'); doc.setTextColor(102, 102, 102);
-        doc.text(`×${slot.lengthMm}`, tx, y + HEADER_H + 6);
-      }
-      if (slot.standardCode) {
-        doc.setFontSize(5); doc.setTextColor(153, 153, 153);
-        doc.text(slot.standardCode, tx, y + TAG_H - 1.5);
-      }
+      const rows = [slot.metric, slot.lengthMm != null ? `×${slot.lengthMm}mm` : null, slot.standardCode, slot.toolType].filter(Boolean);
+      const rh = TAG_H / (rows.length + 1);
+      rows.forEach((val, idx) => {
+        const ry = y + rh * (idx + 1);
+        if (idx === 0) { doc.setFontSize(6); doc.setFont('helvetica', 'bold'); doc.setTextColor(26, 26, 26); }
+        else { doc.setFontSize(5); doc.setFont('helvetica', 'normal'); doc.setTextColor(102, 102, 102); }
+        doc.text(val, tx, ry);
+      });
     } else {
       doc.setFontSize(5); doc.setTextColor(204, 204, 204);
-      doc.text('—', cx + colW / 2, y + HEADER_H + BODY_H / 2 + 1, { align: 'center' });
+      doc.text('—', cx + colW / 2, y + TAG_H / 2 + 1, { align: 'center' });
     }
   }
 
