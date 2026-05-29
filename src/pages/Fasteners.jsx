@@ -4,7 +4,7 @@ import FastenerCard from '../components/FastenerCard.jsx';
 
 const METRICS = ['M2','M2.5','M3','M4','M5','M6','M8','M10','M12','M14','M16','M20','M24'];
 const TOOL_TYPES = ['Hex','Phillips','Torx','Flat','Nut','Washer','Other'];
-const EMPTY = { metric: 'M6', lengthMm: '', standardId: '', toolType: 'Hex', quantity: 0, notes: '' };
+const EMPTY = { metric: 'M6', lengthMm: '', standardId: '', toolType: 'Hex', notes: '' };
 
 function Modal({ title, onClose, children }) {
   return (
@@ -49,7 +49,7 @@ export default function Fasteners() {
   function openAdd() { setForm(EMPTY); setFormError(''); setAddOpen(true); }
   function openEdit(f) {
     setForm({ metric: f.metric, lengthMm: f.lengthMm ?? '', standardId: f.standardId ?? '',
-      toolType: f.toolType, quantity: f.quantity, notes: f.notes || '' });
+      toolType: f.toolType, notes: f.notes || '' });
     setFormError(''); setEditTarget(f);
   }
 
@@ -60,7 +60,6 @@ export default function Fasteners() {
       lengthMm: form.lengthMm !== '' ? Number(form.lengthMm) : null,
       standardId: form.standardId || null,
       toolType: form.toolType,
-      quantity: Number(form.quantity) || 0,
       notes: form.notes.trim() || null,
     };
     try {
@@ -113,12 +112,6 @@ export default function Fasteners() {
             {TOOL_TYPES.map(t => <option key={t}>{t}</option>)}
           </select>
         </div>
-      </div>
-      <div>
-        <label className="block font-mono text-xs text-gray-600 mb-1">Quantity</label>
-        <input type="number" min="0"
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none"
-          value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
       </div>
       <div>
         <label className="block font-mono text-xs text-gray-600 mb-1">Notes</label>

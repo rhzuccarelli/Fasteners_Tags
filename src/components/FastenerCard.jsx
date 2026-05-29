@@ -44,10 +44,6 @@ export default function FastenerCard({ fastener, standard, selected, onSelect, o
       </div>
       <div className="flex gap-2 flex-wrap">
         <span className={`px-2 py-0.5 rounded text-xs font-mono font-medium ${badgeCls}`}>{fastener.toolType}</span>
-        <span className={`px-2 py-0.5 rounded text-xs font-mono font-medium ${fastener.quantity === 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
-          qty: {fastener.quantity}
-        </span>
-        {fastener.quantity === 0 && <span className="text-xs text-red-500 font-mono">⚠ out of stock</span>}
       </div>
       {fastener.notes && <p className="text-xs text-gray-400 truncate">{fastener.notes}</p>}
       <div className="flex gap-2 pt-1 border-t border-gray-100">

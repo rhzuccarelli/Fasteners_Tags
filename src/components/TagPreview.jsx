@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-// Rendered at 4× scale: 200×60px for 50×15mm
-const S = 4;
+// Rendered at 3× scale: 150×45px for 50×15mm
+const S = 3;
 const W = 50 * S, H = 15 * S;
 // Drawing panel: 3:5 aspect ratio (portrait). Inner image height = H - 8px padding → imgH.
 // imgW = imgH * 3/5, panelW = imgW + 8px padding.
