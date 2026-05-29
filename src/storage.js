@@ -142,6 +142,41 @@ export const boxesDb = {
   },
 };
 
+// ── JSON backup/restore ───────────────────────────────────────────────────
+export function exportJSON() {
+  const data = {
+    standards: load(KEYS.standards) || [],
+    fasteners: load(KEYS.fasteners) || [],
+    boxes:     load(KEYS.boxes)     || [],
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `fasteners-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function importJSON(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.standards) save(KEYS.standards, data.standards);
+        if (data.fasteners) save(KEYS.fasteners, data.fasteners);
+        if (data.boxes)     save(KEYS.boxes,     data.boxes);
+        resolve();
+      } catch (err) {
+        reject(new Error('Invalid JSON file'));
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
 // ── Image resize helper ────────────────────────────────────────────────────
 export function resizeImageFile(file, maxPx = 180) {
   return new Promise((resolve, reject) => {
