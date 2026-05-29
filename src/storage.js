@@ -86,12 +86,6 @@ export const fastenersDb = {
 
   delete(id) {
     save(KEYS.fasteners, this.getAll().filter(i => i.id !== id));
-    // Clear from box slots
-    const boxes = load(KEYS.boxes) || [];
-    save(KEYS.boxes, boxes.map(b => ({
-      ...b,
-      slots: b.slots.map(s => s.fastenerId === id ? { ...s, fastenerId: null } : s),
-    })));
   },
 };
 
@@ -102,7 +96,7 @@ export const boxesDb = {
   add(data) {
     const items = this.getAll();
     const divisions = data.divisions || 1;
-    const slots = Array.from({ length: divisions }, (_, i) => ({ slotIndex: i, fastenerId: null }));
+    const slots = Array.from({ length: divisions }, (_, i) => ({ slotIndex: i, metric: null, lengthMm: null }));
     const item = { id: genId(), ...data, slots, createdAt: new Date().toISOString() };
     save(KEYS.boxes, [...items, item]);
     return item;
@@ -116,7 +110,7 @@ export const boxesDb = {
     if (data.divisions !== undefined && data.divisions !== items[idx].divisions) {
       const n = data.divisions;
       if (n > slots.length) {
-        for (let i = slots.length; i < n; i++) slots.push({ slotIndex: i, fastenerId: null });
+        for (let i = slots.length; i < n; i++) slots.push({ slotIndex: i, metric: null, lengthMm: null });
       } else {
         slots = slots.slice(0, n);
       }
@@ -126,12 +120,12 @@ export const boxesDb = {
     return items[idx];
   },
 
-  setSlot(id, slotIndex, fastenerId) {
+  setSlot(id, slotIndex, { metric, lengthMm }) {
     const items = this.getAll();
     const idx = items.findIndex(i => i.id === id);
     if (idx === -1) throw new Error('Not found');
     items[idx].slots = items[idx].slots.map(s =>
-      s.slotIndex === slotIndex ? { ...s, fastenerId: fastenerId || null } : s
+      s.slotIndex === slotIndex ? { ...s, metric: metric || null, lengthMm: lengthMm ?? null } : s
     );
     save(KEYS.boxes, items);
     return items[idx];

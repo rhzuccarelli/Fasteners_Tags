@@ -3,6 +3,7 @@ import { fastenersDb, boxesDb, standardsDb } from '../storage.js';
 import { exportTagsPDF } from '../pdf.js';
 import TagPreview from '../components/TagPreview.jsx';
 
+
 function ExportBtn({ onClick, disabled, loading, children }) {
   return (
     <button onClick={onClick} disabled={disabled || loading}
@@ -26,7 +27,6 @@ export default function PrintTags() {
   const boxes     = useMemo(() => boxesDb.getAll(), []);
   const standards = useMemo(() => standardsDb.getAll(), []);
 
-  const fastenerMap = useMemo(() => Object.fromEntries(fasteners.map(f => [f.id, f])), [fasteners]);
   const standardMap = useMemo(() => Object.fromEntries(standards.map(s => [s.id, s])), [standards]);
 
   const [selF, setSelF] = useState(new Set());
@@ -41,7 +41,7 @@ export default function PrintTags() {
     if (items.length === 0) { setError('Nothing to export.'); return; }
     setLoading(key); setError('');
     try {
-      exportTagsPDF(items, type, fastenerMap, standardMap);
+      exportTagsPDF(items, type, standardMap);
     } catch (err) {
       setError('PDF generation failed: ' + err.message);
     } finally {
@@ -146,11 +146,15 @@ export default function PrintTags() {
         ) : (
           <div className="flex flex-col gap-2">
             {boxes.map(box => {
-              const enrichedSlots = (box.slots || []).map(s => {
-                const f = s.fastenerId ? fastenerMap[s.fastenerId] : null;
-                const std = f?.standardId ? standardMap[f.standardId] : null;
-                return f ? { ...s, metric: f.metric, lengthMm: f.lengthMm, standardCode: std?.code } : s;
-              });
+              const std = box.standardId ? standardMap[box.standardId] : null;
+              const boxTag = {
+                standardCode: std?.code ?? null,
+                drawingDataUrl: std?.drawingDataUrl ?? null,
+                toolType: null,
+                divisions: box.divisions,
+                slots: box.slots || [],
+              };
+              const filled = (box.slots || []).filter(s => s.metric).length;
               return (
                 <div key={box.id} onClick={() => toggleB(box.id)}
                   className={`bg-white border rounded-lg p-4 flex items-center gap-5 cursor-pointer transition-colors ${
@@ -158,16 +162,16 @@ export default function PrintTags() {
                   <input type="checkbox" checked={selB.has(box.id)} onChange={() => toggleB(box.id)}
                     onClick={e => e.stopPropagation()} className="w-4 h-4 rounded text-blue-600 flex-shrink-0" />
                   <div className="flex-shrink-0">
-                    <TagPreview type="box" tag={{ boxName: box.name, divisions: box.divisions, slots: enrichedSlots }} />
+                    <TagPreview type="box" tag={boxTag} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-mono font-bold text-charcoal">{box.name}</div>
                     <div className="font-mono text-xs text-gray-400">
-                      {box.size} · {box.divisions} slot{box.divisions !== 1 ? 's' : ''}
+                      {std?.code || 'No standard'} · {box.divisions} slot{box.divisions !== 1 ? 's' : ''}
                       {box.location && ` · ${box.location}`}
                     </div>
                     <div className="font-mono text-xs text-gray-400 mt-0.5">
-                      {(box.slots || []).filter(s => s.fastenerId).length}/{box.divisions} filled
+                      {filled}/{box.divisions} filled
                     </div>
                   </div>
                 </div>
