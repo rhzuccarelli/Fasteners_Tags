@@ -49,10 +49,10 @@ export default function UploadDrawing({ standard, onClose, onSuccess }) {
             ) : (
               <div className="text-center">
                 <p className="font-mono text-sm text-gray-600">Click to select image</p>
-                <p className="font-mono text-xs text-gray-400 mt-0.5">.png · .jpg · .jpeg · .gif · .webp</p>
+                <p className="font-mono text-xs text-gray-400 mt-0.5">.png · .jpg · .jpeg · .gif · .webp · .svg</p>
               </div>
             )}
-            <input ref={inputRef} type="file" accept="image/*" className="hidden"
+            <input ref={inputRef} type="file" accept="image/*,.svg" className="hidden"
               onChange={e => { setFile(e.target.files[0] || null); setError(''); }} />
           </div>
 
