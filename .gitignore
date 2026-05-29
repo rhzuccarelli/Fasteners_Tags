@@ -1,9 +1,3 @@
 node_modules/
-client/node_modules/
-client/dist/
-server/fasteners.db
-*.db-shm
-*.db-wal
-uploads/*.png
-uploads/*_original.*
+dist/
 .DS_Store
