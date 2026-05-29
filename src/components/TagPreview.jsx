@@ -48,30 +48,32 @@ function SingleTag({ tag }) {
 function BoxTag({ tag }) {
   const { divisions = 1, slots = [] } = tag;
   const colW = W / divisions;
+  // Drawing stacked on top: 3:5 portrait, height capped so text fits below
+  const slotImgH = Math.round(H * 0.4);
+  const slotImgW = Math.round(slotImgH * 3 / 5);
 
   return (
     <div style={{ width: W, height: H, border: '1px solid #ccc', fontFamily: 'Roboto Mono, monospace', overflow: 'hidden', display: 'flex' }}>
       {Array.from({ length: divisions }, (_, i) => {
         const slot = slots[i] || {};
         const [imgErr, setImgErr] = useState(false);
-        const slotImgH = H - 6;
-        const slotImgW = Math.round(slotImgH * 3 / 5);
         return (
           <div key={i} style={{ width: colW, height: '100%', background: i % 2 === 0 ? '#f8f8f8' : '#fff',
             borderLeft: i > 0 ? '.5px solid #e5e5e5' : 'none',
-            display: 'flex', alignItems: 'center', overflow: 'hidden', padding: '2px 3px', gap: 2 }}>
-            {slot.drawingDataUrl && !imgErr && (
-              <img src={slot.drawingDataUrl} alt=""
-                style={{ width: slotImgW, height: slotImgH, objectFit: 'contain', flexShrink: 0 }}
-                onError={() => setImgErr(true)} />
-            )}
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden', padding: '2px 1px', gap: 1, textAlign: 'center' }}>
             {slot.metric ? (
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', overflow: 'hidden', flex: 1 }}>
-                <span style={{ fontWeight: 'bold', fontSize: 8, color: '#1a1a1a', lineHeight: 1 }}>{slot.metric}</span>
-                {slot.lengthMm != null && <span style={{ fontSize: 6, color: '#555' }}>×{slot.lengthMm}mm</span>}
-                {slot.standardCode && <span style={{ fontSize: 5.5, color: '#888' }}>{slot.standardCode}</span>}
-                {slot.toolType && <span style={{ fontSize: 5.5, color: '#aaa' }}>{slot.toolType}</span>}
-              </div>
+              <>
+                {slot.drawingDataUrl && !imgErr && (
+                  <img src={slot.drawingDataUrl} alt=""
+                    style={{ width: slotImgW, height: slotImgH, objectFit: 'contain', flexShrink: 0 }}
+                    onError={() => setImgErr(true)} />
+                )}
+                <span style={{ fontWeight: 'bold', fontSize: 8, color: '#1a1a1a', lineHeight: 1.1, whiteSpace: 'nowrap' }}>{slot.metric}</span>
+                {slot.lengthMm != null && <span style={{ fontSize: 6.5, color: '#555', whiteSpace: 'nowrap' }}>×{slot.lengthMm}mm</span>}
+                {slot.standardCode && <span style={{ fontSize: 6, color: '#888', whiteSpace: 'nowrap' }}>{slot.standardCode}</span>}
+                {slot.toolType && <span style={{ fontSize: 5.5, color: '#aaa', whiteSpace: 'nowrap' }}>{slot.toolType}</span>}
+              </>
             ) : <span style={{ fontSize: 6, color: '#ccc' }}>—</span>}
           </div>
         );
