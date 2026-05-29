@@ -1,6 +1,6 @@
 // jsPDF-based tag generator — runs entirely in the browser
 
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 
 const TAG_W = 50;   // mm
 const TAG_H = 15;   // mm

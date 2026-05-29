@@ -1,5 +1,25 @@
 import React from 'react';
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  render() {
+    if (this.state.error) return (
+      <div style={{ padding: 32, fontFamily: 'monospace', color: '#1a1a1a' }}>
+        <h2 style={{ color: '#dc2626', marginBottom: 8 }}>Something went wrong</h2>
+        <pre style={{ background: '#f5f5f5', padding: 16, borderRadius: 6, fontSize: 12, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+          {this.state.error?.message}{'\n\n'}{this.state.error?.stack}
+        </pre>
+        <button onClick={() => this.setState({ error: null })}
+          style={{ marginTop: 16, padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: 'monospace' }}>
+          Try again
+        </button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 import Standards from './pages/Standards.jsx';
 import Fasteners from './pages/Fasteners.jsx';
 import Boxes from './pages/Boxes.jsx';
@@ -78,6 +98,7 @@ export default function App() {
         </aside>
 
         <main className="flex-1 overflow-y-auto app-grid-bg">
+          <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Navigate to="/fasteners" replace />} />
             <Route path="/standards" element={<Standards />} />
@@ -85,6 +106,7 @@ export default function App() {
             <Route path="/boxes" element={<Boxes />} />
             <Route path="/print" element={<PrintTags />} />
           </Routes>
+          </ErrorBoundary>
         </main>
       </div>
     </HashRouter>
